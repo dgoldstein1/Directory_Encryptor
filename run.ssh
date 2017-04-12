@@ -1,0 +1,71 @@
+#!/bin/bash
+
+#args = %done, total, currentFile
+ProgressBar () {
+    let _progress=(${1}*100/${2}*100)/100
+
+    _fill=$(printf "%${_done}s")
+    _empty=$(printf "%${_left}s")
+	printf "  (${_progress}%%) ${3} \n"	
+}
+
+
+data_directory="$1" #first arg
+mode="$2"
+password="$3"
+if [ -z "$3" ] #no password passed
+	then
+		echo "password: "
+		read -s password
+	fi
+
+
+#get number of files in curr dir
+IFS=$'\n' #space in file name
+printf "indexing files..\n"
+dirSize=0
+for i in `find $data_directory` ;
+do
+	if [ -f "$i" ]
+	    then
+	    	let "dirSize++"
+	    fi
+done
+printf "$dirSize files indexed \n"
+
+#build encryptor
+if ! [ -f cryptopp-authenc.exe ]; 
+then
+	g++ -g3 -Wall -w  -Wextra cryptopp-authenc.cpp  -o cryptopp-authenc.exe -lcryptopp
+fi
+
+#process all files in dir-tree
+filesProcessed=0
+printf "processing files.. \n"
+for i in `find $data_directory` ;
+do
+	if [ -f "$i" ]
+	    then
+    		filename=$(basename "$i")
+			extension="${filename##*.}"
+
+	    	if [ "$mode" == "encrypt" ] && [ "$extension" != "encrypted" ];
+	    	then
+	    		./cryptopp-authenc.exe "$mode" "$i" "$password" "$i" "$USER"
+	    		mv "$i" "${i}.encrypted" #add extension to show encryption
+	    		
+	    	fi
+	    	if [ "$mode" == "decrypt" ] && [ "$extension" == "encrypted" ];
+	    	then
+				./cryptopp-authenc.exe "$mode" "$i" "$password" "$i" "$USER"
+				dirName=$(dirname "${i}")
+				mv "$i" "$dirName""${filename%.*}" #remove encrypted extension
+
+	    	fi
+
+
+	    	let "filesProcessed++"
+	    	ProgressBar ${filesProcessed} ${dirSize} "$i"
+	    fi
+done
+

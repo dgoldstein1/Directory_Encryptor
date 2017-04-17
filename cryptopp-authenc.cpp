@@ -67,8 +67,8 @@ void PrintKeyAndIV(SecByteBlock& ekey,
    SecByteBlock& iv,
    SecByteBlock& akey);
 
-void EncryptMsg(string password, string source, string destination, string username);
-void DecryptMsg(string password, string source, string destination, string username);
+int EncryptMsg(string password, string source, string destination, string username);
+int DecryptMsg(string password, string source, string destination, string username);
 
 // g++ -DDEBUG=1 -g3 -O1 -Wall -Wextra -Wno-unused-parameter -I/usr/local/include/cryptopp cryptopp-authenc.cpp /usr/local/lib/libcryptopp.a -o cryptopp-authenc.exe
 
@@ -91,15 +91,11 @@ int main(int argc, char* argv[])
 
     // encrypt or decrypt
     if (!mode.compare("encrypt")){
-        EncryptMsg(password, source, destination, username);
+        return EncryptMsg(password, source, destination, username);
     } else if (!mode.compare("decrypt")){
-        DecryptMsg(password, source, destination, username);
-    } else {
-        cout << "no such mode " << mode << endl;
-        return 1;
-    }
-
-    return 0;
+        return DecryptMsg(password, source, destination, username);
+    } 
+    return 1;
 }
 
 
@@ -107,7 +103,7 @@ int main(int argc, char* argv[])
 /*
 * encrpyts message in AES
 */
-void EncryptMsg(string password, string source, string destination, string username){  
+int EncryptMsg(string password, string source, string destination, string username){  
     try {
 
         
@@ -144,10 +140,13 @@ void EncryptMsg(string password, string source, string destination, string usern
     catch(CryptoPP::Exception& ex)
     {
         cerr << ex.what() << endl;
+        return 1;
     }
+
+    return 0;
 }
 
-void DecryptMsg(string password, string source, string destination, string username){  
+int DecryptMsg(string password, string source, string destination, string username){  
     try {
 
         // derived parameters
@@ -188,8 +187,11 @@ void DecryptMsg(string password, string source, string destination, string usern
     }
     catch(CryptoPP::Exception& ex)
     {
-        cerr << ex.what() << endl;
+        cout << "File Skipped: Invalid Password" << endl;
+        return 1;
     }
+
+    return 0;
 
 }
 

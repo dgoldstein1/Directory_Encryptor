@@ -1,3 +1,4 @@
+#tests individual file enccryption / decryption of cryptopp-authenc.cpp
 sourceFile="example.txt"
 destinationFile="destination.txt"
 password="password"

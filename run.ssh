@@ -9,7 +9,11 @@ ProgressBar () {
 	printf "  (${_progress}%%) ${3} \n"	
 }
 
-
+#parse args
+if [ "$#" -ne 3 ]; then
+    echo "Illegal number of parameters. Usage: './run.ssh sample_dir/ encrypt samplePassword '"
+    exit 1
+fi
 data_directory="$1" #first arg
 mode="$2"
 password="$3"
@@ -44,28 +48,34 @@ filesProcessed=0
 printf "processing files.. \n"
 for i in `find $data_directory` ;
 do
-	if [ -f "$i" ]
-	    then
-    		filename=$(basename "$i")
-			extension="${filename##*.}"
+	if [ -f "$i" ]; then
+    	ProgressBar ${filesProcessed} ${dirSize} "$i"
+		filename=$(basename "$i")
+		extension="${filename##*.}"
 
-	    	if [ "$mode" == "encrypt" ] && [ "$extension" != "encrypted" ];
-	    	then
-	    		./cryptopp-authenc.exe "$mode" "$i" "$password" "$i" "$USER"
-	    		mv "$i" "${i}.encrypted" #add extension to show encryption
-	    		
-	    	fi
-	    	if [ "$mode" == "decrypt" ] && [ "$extension" == "encrypted" ];
-	    	then
-				./cryptopp-authenc.exe "$mode" "$i" "$password" "$i" "$USER"
+    	if [ "$mode" == "encrypt" ] && [ "$extension" != "encrypted" ];
+    	then
+    		./cryptopp-authenc.exe "$mode" "$i" "$password" "$i" "$USER"
+    		mv "$i" "${i}.encrypted" #add extension to show encryption
+    		
+    	fi
+    	if [ "$mode" == "decrypt" ] && [ "$extension" == "encrypted" ];
+    	then
+			./cryptopp-authenc.exe "$mode" "$i" "$password" "$i" "$USER"
+			if [ $? -eq 0 ]; then
 				dirName=$(dirname "${i}")
-				mv "$i" "$dirName""${filename%.*}" #remove encrypted extension
+				mv "$i" "${dirName}/""${filename%.*}" #remove encrypted extension
+			fi
 
-	    	fi
+    	fi
+    	if [ "$mode" != "encrypt" ] && [ "$mode" != "decrypt" ];
+    	then
+	    	echo "No such mode: " "$mode"
+	    	exit 1
+    		
+    	fi
 
-
-	    	let "filesProcessed++"
-	    	ProgressBar ${filesProcessed} ${dirSize} "$i"
-	    fi
+    	let "filesProcessed++"
+	fi
 done
 
